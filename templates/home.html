@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+  <style>
+    .center-align {
+      text-align: center;
+      padding-top: 50px;
+    }
+
+    .fade-out {
+      opacity: 0;
+      transition: opacity 1s ease-out;
+    }
+
+    .general-layout {
+      width: 100%;
+    }
+
+    .card-container {
+      display: flex;
+      justify-content: center;
+      padding: 20px 0;
+    }
+
+    .input-group-text {
+      background-color: lightgrey;
+      width: 28px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .vacation-type-card {
+      border: 1px solid #ddd;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background-color 1s ease-out;
+    }
+
+    .amenity-card {
+      border: 1px solid #ddd;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background-color 1s ease-out;
+    }
+
+    .activity-card {
+      border: 1px solid #ddd;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background-color 1s ease-out;
+    }
+
+    .selected {
+      background-color: lightblue;
+    }
+
+    .hotel-card {
+      border: 1px solid #ddd;
+      cursor: pointer;
+      margin-bottom: 10px;
+      padding: 10px;
+      transition: all 0.3s ease-out;
+    }
+
+    .hotel-card.expanded {
+      max-height: none;
+      height: auto;
+    }
+
+    .hotel-card h2 {
+      margin: 0;
+    }
+
+    .hotel-card p {
+      margin: 0;
+      opacity: 1;
+      transition: opacity 0.3s ease-out;
+    }
+
+    .hotel-card.expanded p {
+      opacity: 1;
+    }
+
+    .price-budget-container {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .remaining-budget {
+      margin-left: auto;
+    }
+
+    .negative-budget {
+      color: red;
+    }
+
+    .activity-suggestions {
+      display: none;
+      margin-top: 10px;
+    }
+
+    .hotel-card.expanded .activity-suggestions {
+      display: block;
+    }
+
+    .hotel-card.expanded .price-budget-container {
+      float: right;
+    }
+
+    .hotel-card {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .activity-budget-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .activity-suggestions {
+      margin-right: auto;
+    }
+
+    .remaining-budget {
+      margin-left: 10px;
+    }
+
+    .category-ribbon {
+      position: absolute;
+      top: 0;
+      right: 0;
+      /* Updated property */
+      background-color: #f5a623;
+      color: #fff;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      z-index: 1;
+    }
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+</head>
+
+<body>
+  <div class="center-align">
+    <h1>VITA</h1>
+  </div>
+  <div id="initial-content" class="text-center">
+    <button class="btn btn-primary mx-2 form-button" id="yes-button">Let's get started!</button>
+  </div>
+
+  <div class="card-container">
+    <div id="form-card" class="card" style="width: 30%; display: none;">
+      <div class="card-body">
+        <div id="form-yes" class="my-5" style="display: none;">
+          <div class="form-group">
+            <label for="budget-yes">Budget:</label>
+            <div class="input-group general-layout">
+              <div class="input-group-prepend">
+                <span class="input-group-text">
+                  <img src="{{ url_for('static', filename='icons/euro.svg') }}" alt="Euro Icon"
+                    style="width: 16px; height: 16px;">
+                </span>
+              </div>
+              <input type="number" class="form-control" id="budget-yes" name="budget">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="destination-yes">Destination:</label>
+            <div class="input-group general-layout">
+              <div class="input-group-prepend">
+                <span class="input-group-text">
+                  <img src="{{ url_for('static', filename='icons/destination.svg') }}" alt="Destination Icon"
+                    style="width: 16px; height: 16px;">
+                </span>
+              </div>
+              <select id="destination-yes" name="destination" class="form-control">
+                <option selected>Choose your destination</option>
+                {% for zone in zones %}
+                <option>{{ zone }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="start-date-yes">Check-in Date:</label>
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <span class="input-group-text">
+                  <i class="fas fa-calendar-alt"></i>
+                </span>
+              </div>
+              <input type="text" class="form-control general-layout" id="start-date-yes" name="start-date">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="end-date-yes">Check-out Date:</label>
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <span class="input-group-text">
+                  <i class="fas fa-calendar-alt"></i>
+                </span>
+              </div>
+              <input type="text" class="form-control general-layout" id="end-date-yes" name="end-date">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="people-count">Number of People:</label>
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <button class="btn btn-outline-secondary" type="button" id="decrement-people">
+                  <i class="fas fa-minus"></i>
+                </button>
+              </div>
+              <input type="number" class="form-control" id="people-count" name="people-count" value="1" min="1">
+              <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="button" id="increment-people">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="rooms-count">Number of Rooms:</label>
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <button class="btn btn-outline-secondary" type="button" id="decrement-rooms">
+                  <i class="fas fa-minus"></i>
+                </button>
+              </div>
+              <input type="number" class="form-control" id="rooms-count" name="rooms-count" value="1" min="1">
+              <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="button" id="increment-rooms">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <button id="submit-button" class="btn btn-primary" style="background-color: blue;">Submit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="form-no" class="my-5" style="display: none;">
+    <div class="form-group">
+      <label for="budget-no">Budget:</label>
+      <div class="input-group budget-container">
+        <div class="input-group-prepend">
+          <span class="input-group-text">€</span>
+        </div>
+        <input type="number" class="form-control" id="budget-no" name="budget">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="start-date-yes">Start Date:</label>
+      <input type="date" class="form-control general-layout" id="start-date-yes" name="start-date">
+    </div>
+    <div class="form-group">
+      <label for="end-date-yes">End Date:</label>
+      <input type="date" class="form-control general-layout" id="end-date-yes" name="end-date">
+    </div>
+    <div class="form-group">
+      <label for="priorities-no">What do you prioritize the most?</label>
+      <select multiple id="priorities-no" name="priorities" class="form-control">
+        <!-- Options go here -->
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Do you want to avoid overly touristic areas?</label><br>
+      <input type="radio" id="yes-no" name="touristic-no" value="yes">
+      <label for="yes-no">Yes</label>
+      <input type="radio" id="no-no" name="touristic-no" value="no">
+      <label for="no-no">No</label>
+    </div>
+  </div>
+
+  <div id="results-container" style="padding: 20px 0;"></div>
+
+
+  <script>
+    $(document).ready(function () {
+      // Increment and decrement buttons for people count
+      $("#increment-people").click(function () {
+        var peopleCount = parseInt($("#people-count").val());
+        $("#people-count").val(peopleCount + 1);
+      });
+
+      $("#decrement-people").click(function () {
+        var peopleCount = parseInt($("#people-count").val());
+        if (peopleCount > 1) {
+          $("#people-count").val(peopleCount - 1);
+        }
+      });
+
+      // Increment and decrement buttons for rooms count
+      $("#increment-rooms").click(function () {
+        var roomsCount = parseInt($("#rooms-count").val());
+        $("#rooms-count").val(roomsCount + 1);
+      });
+
+      $("#decrement-rooms").click(function () {
+        var roomsCount = parseInt($("#rooms-count").val());
+        if (roomsCount > 1) {
+          $("#rooms-count").val(roomsCount - 1);
+        }
+      });
+      // Event for form switching
+      $("#yes-button, #no-button").click(function () {
+        $("#initial-content").addClass("fade-out");
+        setTimeout(function () {
+          $("#initial-content").hide();
+          $("#form-card").fadeIn();
+          if (this.id == 'yes-button') {
+            $("#form-yes").fadeIn();
+          } else if (this.id == 'no-button') {
+            $("#form-no").fadeIn();
+          }
+        }.bind(this), 1000);
+      });
+
+      // Event for vacation type selection
+      $(".vacation-type-card").click(function () {
+        var $this = $(this);
+        var $parent = $this.parent();
+        var $hiddenInput = $parent.next();
+        var selectedItems = $parent.find('.selected');
+
+        if (selectedItems.length < 3 || $this.hasClass('selected')) {
+          $this.toggleClass('selected');
+          var selectedTypes = $parent.find('.selected').map(function () { return $(this).text(); }).get();
+          $hiddenInput.val(selectedTypes.join(','));
+        }
+      });
+
+      $(".activity-card").click(function () {
+        var $this = $(this);
+        var $parent = $this.parent();
+        var $hiddenInput = $parent.next();
+        var selectedItems = $parent.find('.selected');
+
+        $this.toggleClass('selected');
+        var selectedTypes = $parent.find('.selected').map(function () { return $(this).text(); }).get();
+        $hiddenInput.val(selectedTypes.join(','));
+      });
+
+      $(".amenity-card").click(function () {
+        var $this = $(this);
+        var $parent = $this.parent();
+        var $hiddenInput = $parent.next();
+        var selectedItems = $parent.find('.selected');
+
+        if ($this.hasClass('selected')) {
+          $this.removeClass('selected');
+        } else {
+          if (selectedItems.length < 5) {
+            $this.addClass('selected');
+          }
+        }
+
+        var selectedValues = [];
+        $parent.find('.selected').each(function () {
+          selectedValues.push($(this).text());
+        });
+        $hiddenInput.val(selectedValues.join(', '));
+      });
+      // Helper function to get non-duplicate random elements from array
+      function getRandomElements(array, n) {
+        var result = [];
+        var copy = array.slice(0); // Create a copy so we don't modify the original array
+
+        for (var i = 0; i < n; i++) {
+          if (copy.length === 0) { // If there are no more elements to choose from
+            break; // Stop the loop
+          }
+
+          var randomIndex = Math.floor(Math.random() * copy.length); // Choose a random index
+          result.push(copy[randomIndex]); // Add the chosen element to result
+          copy.splice(randomIndex, 1); // Remove the chosen element from copy
+        }
+
+        return result;
+      }
+
+      // Function to be triggered when the Submit button is pressed
+      function submitForm() {
+        // Retrieve the values from the form fields
+        var budget = $("#budget-yes").val();
+        var destination = $("#destination-yes").val();
+        var startDate = $("#start-date-yes").val();
+        var endDate = $("#end-date-yes").val();
+        var people = $("#people-count").val();
+        var rooms = $("#rooms-count").val();
+        var peopleCount = $("#people-count").val();
+        var priorities = [];
+        var amenities = [];
+        var bestValueData = {
+          "Hotel Name": ["1. The Vintage Lisbon", "2. Jupiter Lisboa Hotel", "3. Hotel Avenida Palace", "4. Hotel Santa Justa", "5. Hotel Britania Art Deco, a Lisbon Heritage Collection", "Holiday Inn Lisbon - Continental", "6. Tivoli Avenida Liberdade Lisboa", "7. As Janelas Verdes Inn, a Lisbon Heritage Collection", "8. Corpo Santo Lisbon Historical Hotel", "9. Olissippo Lapa Palace", "10. Valverde Hotel", "Holiday Inn Lisbon, an IHG Hotel", "11. Pestana Palace Lisboa", "12. Sofitel Lisbon Liberdade", "13. PortoBay Marquês", "14. Inspira Liberdade Boutique Hotel", "15. EPIC SANA Lisboa Hotel", "Hotel Santa Justa", "16. Upon Lisbon Prime Residences", "17. BessaHotel Liberdade", "18. Altis Prime Hotel", "19. Palacio das Especiarias", "20. Holiday Inn Lisbon, an IHG Hotel", "Lux Lisboa Park", "21. EPIC SANA Marquês Hotel", "22. Lisbon Marriott Hotel", "23. Corinthia Lisbon", "24. Tesouro da Baixa by Shiadu", "25. Vincci Baixa", "InterContinental Lisbon", "26. Tivoli Oriente Lisboa Hotel", "27. Novotel Lisboa", "28. Sheraton Lisboa Hotel & Spa", "29. Hotel Lisboa", "30. InterContinental Lisbon", "EPIC SANA Marquês Hotel"],
+          "Hotel Price": ["$260", "$231", "$281", "$303", "$238", "$145", "$511", "$236", "$399", "$718", "$577", "$164", "$399", "$413", "$199", "$161", "$320", "$262", "$216", "$220", "$179", "$275", "$170", "$292", "$314", "$167", "$193", "$183", "$161", "$246", "$162", "$150", "$239", "$112", "$245", "$314"]
+        };
+        var bestRankingData = {
+          "Hotel Name": ["1. Hotel Ibis Lisboa Jose Malhoa", "2. The Vintage Lisbon", "3. Jupiter Lisboa Hotel", "4. Hotel Avenida Palace", "5. Hotel Santa Justa", "InterContinental Lisbon", "6. Hotel Britania Art Deco, a Lisbon Heritage Collection", "7. Tivoli Avenida Liberdade Lisboa", "8. Melia Lisboa Oriente", "9. As Janelas Verdes Inn, a Lisbon Heritage Collection", "10. Corpo Santo Lisbon Historical Hotel", "Holiday Inn Express Lisbon - Plaza Saldanha, an IHG Hotel", "11. Olissippo Lapa Palace", "12. Valverde Hotel", "13. PortoBay Marquês", "14. Holiday Inn Express Lisbon - Oeiras, an IHG Hotel", "15. Inspira Liberdade Boutique Hotel", "InterContinental Lisbon", "16. EPIC SANA Lisboa Hotel", "17. HF Fenix Music", "18. Upon Lisbon Prime Residences", "19. BessaHotel Liberdade", "20. Sant Jordi Hostels Lisbon", "Holiday Inn Lisbon - Continental", "21. Altis Prime Hotel", "22. Palacio das Especiarias", "23. Holiday Inn Lisbon, an IHG Hotel", "24. Lisbon Marriott Hotel", "25. Corinthia Lisbon", "Holiday Inn Express Lisbon - Oeiras, an IHG Hotel", "26. Typical Lisbon Guest House", "27. Vincci Baixa", "28. Tivoli Oriente Lisboa Hotel", "29. Sheraton Lisboa Hotel & Spa", "30. Hotel Roma", "Holiday Inn Lisbon, an IHG Hotel"],
+          "Hotel Price": ["$93", "$260", "$231", "$281", "$303", "$246", "$238", "$511", "$286", "$236", "$399", "$115", "$718", "$577", "$199", "$98", "$161", "$246", "$320", "$172", "$216", "$220", "$164", "$145", "$179", "$275", "$170", "$167", "$193", "$98", "$100", "$161", "$162", "$239", "$99", "$164"]
+        };
+        var activity_data_name = ["1. Praca do Comercio (Terreiro do Paco)", "2. Secret Food Tours Lisbon", "3. Hi Lisbon Walking Tours", "4. Taste of Lisboa Food Tours", "5. Escape Hunt Lisbon", "6. EcoMassage Lisbon", "7. Oh! My Cod Tours", "8. Lisbon Riders", "9. Lisbon Explorer Private Tours", "10. WALK 'N' ROLL Tours", "11. Live History", "12. Unique Portugal Tours", "13. Myo Thai Massage", "14. Funny Tours Lisboa", "15. Your Friend in Lisbon", "16. Lisbon City Runners", "17. Lisbon & Beyond", "18. Blue Emotion Tours", "19. Eco Tuk Tours Lisboa", "20. Keep it Local Tours", "21. Lisbon by Segway", "22. Portuguese For a Day", "23. Rent a Fun - Electric Bike tours & Rentals", "24. Devour Tours", "25. Bikes & Company", "26. Free Bike Tours Lisbon", "27. Withlocals", "28. Lisbon Eco Tours", "29. Lisbon by Beetle", "30. Boost Portugal - Urban Thrills", "61. Garrafeira Nacional", "62. Campo das Cebolas", "63. Escadinhas de Sao Cristovao", "64. Casa do Santo Padre Cruz", "65. Praca Dom Joao da Camara", "66. Bebedouro dos Anjinhos", "67. Lisbon Explorer Private Tours", "68. Taste of Lisboa Food Tours", "69. Statue St Antonio", "70. Camara Municipal de Lisboa", "71. Fado Vadio", "72. Outro Lado", "73. Discover Lisbon", "74. Porta do Mar", "75. Withlocals", "76. O Mundo Fantástico da Sardinha Portuguesa", "77. Reminiscencia (Almada Negreiros)", "78. Illuminati Escape Rossio", "79. Nosso Tejo", "80. Pinheiro Chagas", "81. Busto de Augusto Rosa", "82. Estatua Dom Joao da Camara", "83. Ministério Da Defesa Nacional E Marinha", "84. Lisbon Riders", "85. Secret Food Tours Lisbon", "86. Hi Lisbon Walking Tours", "87. Igreja de Nossa Senhora da Vitoria", "88. Portologia Lisboa, La Maison des Porto", "89. Boost Portugal - Urban Thrills", "90. Praca da Figueira", "91. The Cat of Oz", "92. Manuel Tavares", "93. Olistori", "94. Siam Thai Massage", "95. Lapides das Pedras Negras", "96. Lisbon by Segway", "97. Fachada do Palacio Marques de Tancos", "98. Cooltra Lisbon", "99. Chafariz do Caldas/Antigo Chafariz das Mouras ao Lumiar", "100. Placa Assinalativa do Local do Regicidio", "101. Lisbon Duck Store", "102. Comur - Conserveira de Portugal", "103. Lanebus", "104. A Outra Face da Lua", "105. Timpano dos Pacos do Concelho", "106. Igreja Paroquial de Sao Cristovao e Sao Lourenco", "107. Bikes & Company", "108. Lisbonita Gin Bar", "109. Turismo de Lisboa Visitors & Convention Bureau", "110. Loja das Conservas", "111. Wild Walkers", "112. Fachada do Edificio na Rua das Cruzes da Se 13-15", "113. Negozio Specializzato", "114. Rent a Fun - Electric Bike tours & Rentals", "115. Museu Nacional do Desporto", "116. Homenagem a Jose Saramago", "117. Blue Emotion Tours", "118. Portuguese For a Day", "119. Oh! My Cod Tours", "120. Your Friend in Lisbon", "121. Garrafeira Napoleao", "122. Queijaria Nacional", "123. Devour Tours", "124. Free Bike Tours Lisbon", "125. Portuguese Stuff", "126. Ministry of Yoga", "127. Papabubble Lisboa", "128. Spinach Tours", "129. Palacio da Ginja Portuguesa", "130. Funny Tours Lisboa", "131. The Lisbon Walker", "132. Live History", "133. Arte Rustica", "134. Typographia", "135. Trim Tab Tao", "136. WALK 'N' ROLL Tours", "137. Benamôr 1925 Campo das Cebolas", "138. Keep it Local Tours", "139. O'live by Oliveira da Serra", "140. Sara Beauty", "141. Drive Me Lisbon", "142. Little Yoga Space", "143. Noir Clubbing", "144. Buendia Tours", "145. Lisbon City Runners", "146. Cannabis Store Amsterdam", "147. Caulino ceramics", "148. Ask Me Lisboa", "149. Biclas", "150. Lisbon & Beyond", "151. Lisbon Meeting", "152. Unique Portugal Tours", "153. City Tuk", "154. Akazetta Scooter Rental", "155. Fabrica das Enguias", "156. Joalharia do Carmo", "157. Rita Salazar Store", "158. Lisbon Urban Adventures", "159. Santos Oficios", "160. Choose your Emotion - TOURS & SURF & EVENTS", "161. Madeira House", "162. Hotel do Chiado Bar & Terraco", "163. Ayurvedic Massage Lisbon", "164. Bruxa Beer Bar", "165. Lisbon Eco Tours", "166. Falis", "167. Gatz by Sandra Santos", "168. Loja Portugueza Da Baixa", "169. Take Me", "170. W. A. Sarmento", "171. West Portugal Tours", "172. Lisbon Art & Soul", "173. O Moinho do Cafe", "174. ExclusiveTour Portugal", "175. Street Buddha", "176. Massagista Terapeutica Patricia Cardoso", "177. Lisbon by Beetle", "178. The Tuk Tuk Driver", "179. Wines of Portugal Tasting Room", "180. Lisbon 15:15", "181. Retrosaria Brilhante", "182. Portugal Tour Guide", "183. Yellow Bus Tours", "184. Red Tour Lisbon - Buggy and Segway Tours", "185. Casa Da Cortica", "186. Chapelaria Azevedo", "187. Capitao Lisboa", "188. Context Travel", "189. Luso Gift", "190. Fatum Colours of Fado", "191. Rima Ceramics & Gifts", "192. Claudia Chaves Atelier", "193. Let's Talk Lisbon", "194. Pancho Tours", "195. Teresa Alecrim", "196. Viuva Alegre", "197. Ruao Wines", "198. Smart Sightseeing | Ready to meet Lisbon?", "199. Igo \"your Local Companion\"", "200. Must Lisboa", "201. Concrete Jungles Walking Tours", "202. African Lisbon Tour", "203. Padaria 24", "204. Sisters' Gourmet", "205. Lisbon Photographer", "206. Electric Tiger vintage shop", "207. Nicifeel-Lisboa", "208. Cork Shop", "209. Portugal Top Tours", "210. Caravel on Wheels"]
+        var paid_activity_data_name = ["2. Arco do Triunfo", "3. Tram 28", "4. Rossio Square", "5. Church of St. Anthony", "6. Rua Augusta", "7. Museu Do Aljube", "8. Igreja de Sao Domingos (Santa Justa e Rufina)", "9. Elevador de Santa Justa", "10. Cidade Baixa", "11. Rua dos Correeiros Archaeological Nucleus", "12. Museu do Dinheiro", "13. Monument to King José I", "14. Escape Hunt Lisbon", "15. EcoMassage Lisbon", "16. Mirante Belvedere, do Arco da Rua Augusta", "17. Teatro Nacional Dona Maria II", "18. Armazéns do Chiado", "19. MUDE-Museu do Design e da Moda", "20. Hospital de Bonecas", "21. Teatro Politeama", "22. Cais das Colunas", "23. Ribeira das Naus", "24. A Ginjinha", "25. Museu da Cerveja", "26. Livraria Ferin", "27. Mercado Da Baixa", "28. Column of Pedro IV", "29. Igreja de Nossa Senhora da Conceicao Velha", "30. Terra Heal - Massage Lisbon"]
+        var global_data = {};
+
+
+        // Function to parse the price strings and convert them to numbers
+        function parsePriceString(priceString) {
+          return priceString.replace("$", "");
+        }
+
+        // Loop through the data objects and parse the price strings
+        bestValueData["Hotel Price"] = bestValueData["Hotel Price"].map(parsePriceString);
+        bestRankingData["Hotel Price"] = bestRankingData["Hotel Price"].map(parsePriceString);
+
+        // Calculate difference in days
+        //var diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+        //var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        var startDateInput = $("#start-date-yes").val();
+        var endDateInput = $("#end-date-yes").val();
+
+        var startDate1 = new Date(startDateInput);
+        var endDate1 = new Date(endDateInput);
+
+        if (isNaN(startDate1.getTime()) || isNaN(endDate1.getTime())) {
+          console.error("Invalid date input");
+          return;
+        }
+
+        var diffTime = Math.abs(endDate1.getTime() - startDate1.getTime());
+        var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+
+        $.ajax({
+          url: '/submit_form',
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            destination: destination,
+            startDate: startDate,
+            endDate: endDate,
+            people: people,
+            rooms: rooms,
+            amenities: amenities
+          }),
+          success: function (response) {
+            console.log('FREE ACTIVITY DATA: ' + JSON.stringify(response['Free Activity Name']));
+            console.log('Paid ACTIVITY DATA: ' + JSON.stringify(response['Paid Activity Name']));
+            //   var best_value_hotel_names = response['best_value_hotel_data']['Hotel Name'];
+            //   var best_value_hotel_prices = response['best_value_hotel_data']['Hotel Price'];
+            //   var best_ranking_hotel_names = response['best_ranking_hotel_data']['Hotel Name'];
+            //   var best_ranking_hotel_prices = response['best_ranking_hotel_data']['Hotel Price'];
+            var best_value_hotel_names = bestValueData["Hotel Name"];
+            var best_value_hotel_prices = bestValueData["Hotel Price"];
+            var best_ranking_hotel_names = bestRankingData["Hotel Name"];
+            var best_ranking_hotel_prices = bestRankingData["Hotel Price"];
+            global_data["Hotel Name"] = best_value_hotel_names.concat(best_ranking_hotel_names);
+            global_data["Hotel Price"] = best_value_hotel_prices.concat(best_ranking_hotel_prices);
+            global_data_hotel_names = global_data["Hotel Name"]
+            global_data_hotel_prices = global_data['Hotel Price']
+            var activitiesPerDay = 4;
+            var categories = ['Best Value', 'Least Expensive', 'Most Balanced Experience', 'Best Hotel', 'Most Activity-Packed'];
+
+            // Modify hotel names for Best Value and Best Ranking categories
+            for (var i = 0; i < best_value_hotel_names.length; i++) {
+              if (/^\d/.test(best_value_hotel_names[i])) {
+                best_value_hotel_names[i] = best_value_hotel_names[i].substring(3);
+              }
+            }
+
+            for (var i = 0; i < best_ranking_hotel_names.length; i++) {
+              if (/^\d/.test(best_ranking_hotel_names[i])) {
+                best_ranking_hotel_names[i] = best_ranking_hotel_names[i].substring(3);
+              }
+            }
+
+            for (var i = 0; i < global_data_hotel_names.length; i++) {
+              if (/^\d/.test(global_data_hotel_names[i])) {
+                global_data_hotel_names[i] = global_data_hotel_names[i].substring(3);
+              }
+            }
+
+            for (var i = 0; i < activity_data_name.length; i++) {
+              if (/^\d/.test(activity_data_name[i])) {
+                activity_data_name[i] = activity_data_name[i].substring(3);
+              }
+            }
+
+            for (var i = 0; i < paid_activity_data_name.length; i++) {
+              if (/^\d/.test(paid_activity_data_name[i])) {
+                paid_activity_data_name[i] = paid_activity_data_name[i].substring(3);
+              }
+            }
+
+            activity_data_name = activity_data_name.filter(function (el) {
+              return !paid_activity_data_name.includes(el);
+            });
+
+            var startDateInput = $("#start-date-yes").val();
+            var endDateInput = $("#end-date-yes").val();
+
+            var startDate1 = new Date(startDateInput);
+            var endDate1 = new Date(endDateInput);
+
+            if (isNaN(startDate1.getTime()) || isNaN(endDate1.getTime())) {
+              console.error("Invalid date input");
+              return;
+            }
+
+            var diffTime = Math.abs(endDate1.getTime() - startDate1.getTime());
+            var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            var budget = parseFloat($("#budget-yes").val());
+
+            var cards = [];
+
+            function createActivitySections(card, activities, activitiesPerDay) {
+              var activitySectionsContainer = $("<div></div>").addClass("activity-sections");
+
+              for (var i = 0; i < diffDays; i++) {
+                var activitySection = activities.slice(i * activitiesPerDay, (i + 1) * activitiesPerDay);
+                var activityList = createActivityList(activitySection);
+                var sectionContainer = $("<div></div>").addClass("activity-section").append(activityList);
+                activitySectionsContainer.append(sectionContainer);
+              }
+
+              card.append(activitySectionsContainer);
+            }
+
+            function createActivityList(activitySuggestions) {
+              var activityList = $("<ul></ul>");
+
+              if (Array.isArray(activitySuggestions)) {
+                activitySuggestions.forEach(function (activity) {
+                  var listItem = $("<li></li>").text(activity);
+                  activityList.append(listItem);
+                });
+              } else if (activitySuggestions) {
+                var listItem = $("<li></li>").text(activitySuggestions);
+                activityList.append(listItem);
+              }
+
+              return activityList;
+            }
+
+            function createBestValueCard(index, activities) {
+              createHotelCard("Best Value", best_value_hotel_names[index], best_value_hotel_prices[index], activities, 1);
+            }
+
+            function createLeastExpensiveCard(index, activities) {
+              createHotelCard("Least Expensive", global_data_hotel_names[index], global_data_hotel_prices[index], activities, 0);
+            }
+
+            function createMostBalancedCard(index, activities) {
+              createHotelCard("Most Balanced Experience", global_data_hotel_names[index], global_data_hotel_prices[index], activities, 1);
+            }
+
+            function createBestHotelCard(index, activities) {
+              createHotelCard("Best Hotel", best_ranking_hotel_names[index], best_ranking_hotel_prices[index], activities, 1);
+            }
+
+            function createMostActivityPackedCard(index, activities) {
+              createHotelCard("Most Activity-Packed", global_data_hotel_names[index], global_data_hotel_prices[index], activities, 2);
+            }
+
+
+            function createHotelCard(category, hotelName, price, activities, paid_activities) {
+              // Calculate total price for the stay
+              var totalPrice = price * diffDays;
+
+              // Calculate remaining budget
+              var remainingBudget = budget - totalPrice - (peopleCount * diffDays * 15 * paid_activities);
+              var remainingBudgetStr = remainingBudget < 0 ? "-€" + Math.abs(remainingBudget) : "€" + remainingBudget;
+
+              // Create new elements for each hotel
+              var newCard = $("<div></div>")
+                .addClass("hotel-card")
+                .addClass(category.toLowerCase().replace(/\s+/g, '-'))
+                .append($("<div></div>").addClass("category-ribbon").text(category))
+                .append($("<h2></h2>").text(hotelName))
+                .append($("<div></div>")
+                  .addClass("activity-budget-container")
+                  .append($("<p></p>").addClass("remaining-budget").text("Remaining budget: " + remainingBudgetStr))
+                )
+                .click(function () {
+                  $(this).toggleClass("expanded");
+                  $(this).find(".activity-suggestions").toggle();
+                });
+
+              // Add a class to make the remaining budget red if it's less than 0
+              if (remainingBudget < 0) {
+                newCard.find(".remaining-budget").addClass("negative-budget");
+              }
+
+              // Add activity suggestions
+              var activitySection = $("<div></div>").addClass("activity-section").append(createActivityList(activities));
+              newCard.append($("<div></div>").addClass("activity-suggestions").append(activitySection).hide());
+
+              // Store the new card and its remaining budget in the cards array
+              cards.push({
+                remainingBudget: remainingBudget,
+                card: newCard
+              });
+            }
+
+            // Loop through the categories and call the corresponding functions
+            for (var i = 0; i < categories.length; i++) {
+              var category = categories[i];
+              var cardCreated = false;
+              // var activitySuggestions = activity_data_name.slice(0, Math.min(diffDays * 3, activity_data_name.length));
+              // var paid_activitySuggestions = paid_activity_data_name.slice(0, Math.min(diffDays, paid_activity_data_name.length))
+
+              if (category === 'Best Value') {
+                var numActivities = diffDays * 3;
+                var numPaidActivities = diffDays;
+
+                var activitySuggestions1 = getRandomElements(activity_data_name, numActivities);
+                var paidActivitySuggestions = getRandomElements(paid_activity_data_name, numPaidActivities);
+                activitySuggestions1 = activitySuggestions1.concat(paidActivitySuggestions);
+                console.log("BEST VALUE ACTIVITIES: " + activitySuggestions1)
+                for (var j = 0; j < best_value_hotel_names.length; j++) {
+                  var price = parseFloat(best_value_hotel_prices[j].replace("$", ""));
+                  var totalPrice = price * diffDays;
+                  if (totalPrice < budget * 0.8) {
+                    createBestValueCard(j, activitySuggestions1, activitiesPerDay);
+                    cardCreated = true;
+                    break;
+                  }
+                }
+              } if (category === 'Least Expensive') {
+                var numActivities = diffDays * 4;
+                var numPaidActivities = 0;
+
+                // Select activities
+                var activitySuggestions2 = getRandomElements(activity_data_name, numActivities);
+
+                // Select paid activities
+                var paidActivitySuggestions = getRandomElements(paid_activity_data_name, numPaidActivities);
+
+                // Merge the two arrays
+                activitySuggestions2 = activitySuggestions2.concat(paidActivitySuggestions);
+                console.log("BEST VALUE ACTIVITIES: " + activitySuggestions2)
+                var cheapestHotelIndex = 0;
+                var cheapestPrice = Infinity;
+
+                for (var j = 0; j < global_data["Hotel Price"].length; j++) {
+                  var price = parseFloat(global_data["Hotel Price"][j]);
+                  if (price < cheapestPrice) {
+                    cheapestHotelIndex = j;
+                    cheapestPrice = price;
+                  }
+                }
+
+                createLeastExpensiveCard(cheapestHotelIndex, activitySuggestions2, activitiesPerDay);
+                cardCreated = true;
+              }
+              else if (category === 'Most Balanced Experience') {
+                var numActivities = diffDays * 2;
+                var numPaidActivities = diffDays * 2;
+
+                // Select activities
+                var activitySuggestions3 = getRandomElements(activity_data_name, numActivities);
+
+                // Select paid activities
+                var paidActivitySuggestions = getRandomElements(paid_activity_data_name, numPaidActivities);
+
+                // Merge the two arrays
+                activitySuggestions3 = activitySuggestions3.concat(paidActivitySuggestions);
+
+                for (var j = 0; j < global_data_hotel_names.length; j++) {
+                  var price = parseFloat(global_data_hotel_prices[j].replace("$", ""));
+                  var totalPrice = price * diffDays;
+                  if (totalPrice < budget * 0.6) {
+                    createMostBalancedCard(j, activitySuggestions3, activitiesPerDay);
+                    cardCreated = true;
+                    break;
+                  }
+                }
+              } else if (category === 'Best Hotel') {
+                var numActivities = diffDays * 3;
+                var numPaidActivities = diffDays;
+
+                // Select activities
+                var activitySuggestions4 = getRandomElements(activity_data_name, numActivities);
+
+                // Select paid activities
+                var paidActivitySuggestions = getRandomElements(paid_activity_data_name, numPaidActivities);
+
+                // Merge the two arrays
+                activitySuggestions4 = activitySuggestions4.concat(paidActivitySuggestions);
+
+                for (var j = 0; j < best_ranking_hotel_names.length; j++) {
+                  var price = parseFloat(best_ranking_hotel_prices[j].replace("$", ""));
+                  var totalPrice = price * diffDays;
+                  if (totalPrice < budget * 1.1) {
+                    createBestHotelCard(j, activitySuggestions4, activitiesPerDay);
+                    cardCreated = true;
+                    break;
+                  }
+                }
+              } else if (category === 'Most Activity-Packed') {
+                var numActivities = diffDays * 5;
+                var numPaidActivities = diffDays * 2;
+
+                // Select activities
+                var activitySuggestions5 = getRandomElements(activity_data_name, numActivities);
+
+                // Select paid activities
+                var paidActivitySuggestions = getRandomElements(paid_activity_data_name, numPaidActivities);
+
+                // Merge the two arrays
+                activitySuggestions5 = activitySuggestions5.concat(paidActivitySuggestions);
+
+                var mostActivityPackedHotelIndex = 0;
+                var lowestPrice = Infinity;
+
+                for (var j = 0; j < global_data["Hotel Price"].length; j++) {
+                  console.log('Current price: ' + price)
+                  var price = parseFloat(global_data["Hotel Price"][j]);
+                  if (price < lowestPrice) {
+                    mostActivityPackedHotelIndex = j;
+                    lowestPrice = price;
+                  }
+                }
+
+                createMostActivityPackedCard(mostActivityPackedHotelIndex, activitySuggestions5, activitiesPerDay);
+                cardCreated = true;
+              }
+
+              // If no card is created for a category, you can create a default card saying "No hotels found."
+              if (!cardCreated) {
+                createDefaultCard(category);
+              }
+            }
+
+            // Function to create a default card when no hotels are found for a category
+            function createDefaultCard(category) {
+              var newCard = $("<div></div>")
+                .addClass("hotel-card")
+                .addClass(category.toLowerCase().replace(/\s+/g, '-'))
+                .append($("<div></div>").addClass("category-ribbon").text(category))
+                .append($("<h2></h2>").text("No hotels found."))
+                .click(function () {
+                  // Toggle the expanded state and show/hide the activity suggestions
+                  $(this).toggleClass("expanded");
+                  $(this).find(".activity-suggestions").toggle();
+                });
+
+              cards.push({
+                remainingBudget: 0, // You can set this to 0 for the default card
+                card: newCard
+              });
+            }
+            var activitySuggestions = [activitySuggestions1, activitySuggestions2, activitySuggestions3, activitySuggestions4, activitySuggestions5];
+            var numberOfActivities = [4, 4, 4, 4, 7]
+            // Append the sorted cards to the #results-container
+            cards.forEach(function (card, i) {
+              createActivitySections(card.card, activitySuggestions[i], numberOfActivities[i]); // Display 4 activities per section (day)
+              $("#results-container").append(card.card);
+              $("#results-container").append("<br>"); // Add a line break between hotel cards
+            });
+
+            // Scroll to the new elements
+            $("html, body").animate({
+              scrollTop: $("#results-container").offset().top
+            }, 2000);
+          },
+          error: function (jqXHR, textStatus, errorThrown) {
+            console.log(jqXHR);
+            console.log(textStatus);
+            console.log(errorThrown);
+          }
+
+        });
+      }
+
+      $("#submit-button").click(function () {
+        submitForm();
+      });
+
+      // Initialize the datepicker
+      $("#start-date-yes").datepicker({
+        dateFormat: "yy-mm-dd",
+        onSelect: function (selectedDate) {
+          // Set the minimum and maximum selectable dates for the check-out date
+          var minDate = new Date(selectedDate);
+          var maxDate = new Date(selectedDate);
+          maxDate.setMonth(maxDate.getMonth() + 1);
+
+          $("#end-date-yes").datepicker("option", "minDate", minDate);
+          $("#end-date-yes").datepicker("option", "maxDate", maxDate);
+        }
+      });
+
+      // Initialize the datepicker for the check-out date (initially disabled)
+      $("#end-date-yes").datepicker({
+        dateFormat: "yy-mm-dd",
+        beforeShow: function (input) {
+          // Enable the check-out datepicker only if the check-in date is selected
+          return $("#start-date-yes").val() !== "";
+        },
+        onSelect: function (selectedDate) {
+          // Retrieve the selected check-in and check-out dates
+          var checkInDate = $("#start-date-yes").val();
+          var checkOutDate = selectedDate;
+
+          // Your code for handling the selected check-out date
+          // You can perform any necessary actions or calculations here
+          // For example, you can display the selected dates or calculate the duration of the stay
+          console.log("Check-in Date: " + checkInDate);
+          console.log("Check-out Date: " + checkOutDate);
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
